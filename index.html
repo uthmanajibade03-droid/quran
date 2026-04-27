@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quran Audio Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0d0d0d;
+      --bg-card: #131313;
+      --text: #e8e8e8;
+      --text-muted: #777;
+      --text-arabic: #f0ead6;
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #c8a96e;
+      --error: #e05c5c;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 660px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 2.75rem;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+    }
+
+    header p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Search row ── */
+    .search-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .verse-input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      color: var(--text);
+      font-family: 'IBM Plex Sans', monospace;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .verse-input::placeholder { color: var(--text-muted); }
+    .verse-input:focus { border-color: rgba(200, 169, 110, 0.6); }
+
+    .search-play-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.4rem;
+      color: #0d0d0d;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-play-btn:hover { opacity: 0.82; }
+
+    /* ── Quick verses ── */
+    .quick-verses {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .quick-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.28rem 0.75rem;
+      color: var(--text-muted);
+      font-family: 'IBM Plex Sans', monospace;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Reciter chips ── */
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.55rem;
+    }
+
+    .reciters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 2rem;
+    }
+
+    .reciter-chip {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.32rem 0.85rem;
+      color: var(--text-muted);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .reciter-chip:hover {
+      border-color: rgba(255, 255, 255, 0.28);
+      color: var(--text);
+    }
+
+    .reciter-chip.active {
+      background: #e8e8e8;
+      border-color: #e8e8e8;
+      color: #0d0d0d;
+      font-weight: 500;
+    }
+
+    /* ── Status / error ── */
+    .status {
+      display: none;
+      text-align: center;
+      font-size: 0.83rem;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+    }
+
+    .status.loading {
+      display: block;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+
+    .status.error {
+      display: block;
+      color: var(--error);
+      background: rgba(224, 92, 92, 0.07);
+      border: 1px solid rgba(224, 92, 92, 0.2);
+    }
+
+    /* ── Now-playing card ── */
+    .now-playing {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.6rem;
+    }
+
+    .now-playing.visible { display: block; }
+
+    .verse-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1.4rem;
+    }
+
+    .verse-ref {
+      font-family: 'IBM Plex Sans', monospace;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .reciter-display {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Arabic block ── */
+    .arabic-block {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 0.25rem;
+      margin-bottom: 1.2rem;
+      text-align: right;
+    }
+
+    .arabic-text {
+      font-family: 'IBM Plex Sans Arabic', sans-serif;
+      font-size: 2rem;
+      font-weight: 400;
+      line-height: 1.85;
+      color: var(--text-arabic);
+      direction: rtl;
+    }
+
+    .translation-text {
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Audio controls ── */
+    .audio-controls {
+      margin-top: 1.4rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .controls-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .ctrl-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.18s;
+      flex-shrink: 0;
+    }
+
+    .ctrl-btn:hover {
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .ctrl-btn.primary {
+      width: 50px;
+      height: 50px;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d0d0d;
+    }
+
+    .ctrl-btn.primary:hover {
+      opacity: 0.82;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ── Seek bar ── */
+    .seek-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .time {
+      font-family: 'IBM Plex Sans', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      min-width: 36px;
+    }
+
+    .time.end { text-align: right; }
+
+    .seek-bar {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .seek-bar::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .seek-bar::-moz-range-thumb {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      body { padding: 1.75rem 0.85rem 3rem; }
+      .arabic-text { font-size: 1.6rem; }
+      .reciters { gap: 0.4rem; }
+      .quick-verses { gap: 0.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <h1>Quran Audio Player</h1>
+      <p>Enter a verse reference to listen and read</p>
+    </header>
+
+    <!-- Verse input -->
+    <div class="search-row">
+      <input id="verseInput" class="verse-input" type="text"
+             placeholder="53:2" autocomplete="off" spellcheck="false">
+      <button id="searchPlayBtn" class="search-play-btn">Play</button>
+    </div>
+
+    <!-- Quick verses -->
+    <div class="quick-verses" id="quickVerses">
+      <button class="quick-btn" data-ref="1:1">1:1</button>
+      <button class="quick-btn" data-ref="2:255">2:255</button>
+      <button class="quick-btn" data-ref="36:1">36:1</button>
+      <button class="quick-btn" data-ref="53:2">53:2</button>
+      <button class="quick-btn" data-ref="55:1">55:1</button>
+      <button class="quick-btn" data-ref="112:1">112:1</button>
+      <button class="quick-btn" data-ref="114:1">114:1</button>
+    </div>
+
+    <!-- Reciter selector -->
+    <div class="section-label">Reciter</div>
+    <div class="reciters" id="reciters">
+      <button class="reciter-chip active" data-slug="Alafasy">Mishary Alafasy</button>
+      <button class="reciter-chip" data-slug="AbdulBaset">Abdul Basit</button>
+      <button class="reciter-chip" data-slug="Husary">Mahmoud Al-Husary</button>
+      <button class="reciter-chip" data-slug="AbuBakrShatri">Abu Bakr Al-Shatri</button>
+    </div>
+
+    <!-- Status / error banner -->
+    <div class="status" id="status"></div>
+
+    <!-- Now-playing card -->
+    <div class="now-playing" id="nowPlaying">
+      <div class="verse-meta">
+        <span class="verse-ref" id="displayRef"></span>
+        <span class="reciter-display" id="displayReciter"></span>
+      </div>
+
+      <div class="arabic-block">
+        <div class="arabic-text" id="arabicText" lang="ar" dir="rtl"></div>
+      </div>
+
+      <div class="translation-text" id="translationText"></div>
+
+      <div class="audio-controls">
+        <div class="controls-buttons">
+          <!-- Prev -->
+          <button class="ctrl-btn" id="prevBtn" title="Previous ayah">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="19 20 9 12 19 4 19 20"/>
+              <line x1="5" y1="19" x2="5" y2="5"/>
+            </svg>
+          </button>
+
+          <!-- Play / Pause -->
+          <button class="ctrl-btn primary" id="playPauseBtn" title="Play / Pause">
+            <svg id="iconPlay" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <svg id="iconPause" width="18" height="18" viewBox="0 0 24 24"
+                 fill="currentColor" style="display:none">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          </button>
+
+          <!-- Next -->
+          <button class="ctrl-btn" id="nextBtn" title="Next ayah">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 4 15 12 5 20 5 4"/>
+              <line x1="19" y1="5" x2="19" y2="19"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Seek bar -->
+        <div class="seek-row">
+          <span class="time" id="currentTime">0:00</span>
+          <input class="seek-bar" id="seekBar" type="range"
+                 min="0" max="100" value="0" step="0.1">
+          <span class="time end" id="totalTime">0:00</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <audio id="audio" preload="none"></audio>
+
+  <script>
+    /* ────────────────────────────────────────────────────────────
+       State
+    ──────────────────────────────────────────────────────────── */
+    const RECITERS = {
+      Alafasy:      'Mishary Alafasy',
+      AbdulBaset:   'Abdul Basit',
+      Husary:       'Mahmoud Al-Husary',
+      AbuBakrShatri:'Abu Bakr Al-Shatri',
+    };
+
+    let currentSurah    = null;
+    let currentAyah     = null;
+    let currentSlug     = 'Alafasy';
+    let isSeeking       = false;
+
+    /* ────────────────────────────────────────────────────────────
+       Element refs
+    ──────────────────────────────────────────────────────────── */
+    const verseInput    = document.getElementById('verseInput');
+    const searchPlayBtn = document.getElementById('searchPlayBtn');
+    const statusEl      = document.getElementById('status');
+    const nowPlaying    = document.getElementById('nowPlaying');
+    const displayRef    = document.getElementById('displayRef');
+    const displayReciter= document.getElementById('displayReciter');
+    const arabicText    = document.getElementById('arabicText');
+    const translationEl = document.getElementById('translationText');
+    const audio         = document.getElementById('audio');
+    const playPauseBtn  = document.getElementById('playPauseBtn');
+    const iconPlay      = document.getElementById('iconPlay');
+    const iconPause     = document.getElementById('iconPause');
+    const prevBtn       = document.getElementById('prevBtn');
+    const nextBtn       = document.getElementById('nextBtn');
+    const seekBar       = document.getElementById('seekBar');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalTimeEl   = document.getElementById('totalTime');
+
+    /* ────────────────────────────────────────────────────────────
+       Helpers
+    ──────────────────────────────────────────────────────────── */
+    const pad3 = n => String(n).padStart(3, '0');
+
+    function formatTime(sec) {
+      if (!isFinite(sec) || isNaN(sec)) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function stripHtml(raw) {
+      return raw
+        .replace(/<[^>]+>/g, '')   // remove all HTML tags
+        .replace(/\[\d+\]/g, '')   // remove footnote markers like [1]
+        .trim();
+    }
+
+    function setStatus(msg, type) {
+      statusEl.textContent = msg;
+      statusEl.className   = `status ${type}`;
+    }
+
+    function clearStatus() {
+      statusEl.textContent = '';
+      statusEl.className   = 'status';
+    }
+
+    function setPlayingState(playing) {
+      iconPlay.style.display  = playing ? 'none' : '';
+      iconPause.style.display = playing ? ''     : 'none';
+    }
+
+    function parseRef(raw) {
+      const parts = raw.trim().split(':');
+      if (parts.length !== 2) return null;
+      const surah = parseInt(parts[0], 10);
+      const ayah  = parseInt(parts[1], 10);
+      if (!Number.isInteger(surah) || !Number.isInteger(ayah)) return null;
+      if (surah < 1 || surah > 114)  return null;
+      if (ayah  < 1)                 return null;
+      return { surah, ayah };
+    }
+
+    function audioUrl(surah, ayah, slug) {
+      return `https://verses.quran.com/${slug}/mp3/${pad3(surah)}${pad3(ayah)}.mp3`;
+    }
+
+    /* ────────────────────────────────────────────────────────────
+       API fetch
+    ──────────────────────────────────────────────────────────── */
+    async function fetchVerseData(surah, ayah) {
+      const url = `https://api.qurancdn.com/api/qdc/verses/by_key/${surah}:${ayah}`
+                + `?language=en&words=false&translations=131&fields=text_uthmani`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const { verse } = await res.json();
+      return {
+        arabic:      verse.text_uthmani || '',
+        translation: verse.translations?.[0]?.text
+                       ? stripHtml(verse.translations[0].text)
+                       : '',
+      };
+    }
+
+    /* ────────────────────────────────────────────────────────────
+       Reset UI helpers
+    ──────────────────────────────────────────────────────────── */
+    function resetSeek() {
+      seekBar.value           = 0;
+      currentTimeEl.textContent = '0:00';
+      totalTimeEl.textContent   = '0:00';
+    }
+
+    /* ────────────────────────────────────────────────────────────
+       Core load function
+    ──────────────────────────────────────────────────────────── */
+    async function loadVerse(surah, ayah, slug, autoplay = true) {
+      // Stop and reset
+      audio.pause();
+      audio.src = '';
+      resetSeek();
+      setPlayingState(false);
+      nowPlaying.classList.remove('visible');
+
+      setStatus('Loading…', 'loading');
+
+      let verseData;
+      try {
+        // Fetch text and prime audio URL in parallel
+        const aUrl = audioUrl(surah, ayah, slug);
+        verseData = await fetchVerseData(surah, ayah);
+
+        // Now wire up the audio element
+        audio.src = aUrl;
+        audio.load();
+      } catch (err) {
+        setStatus('Could not fetch verse data. Check your connection and try again.', 'error');
+        return;
+      }
+
+      // Populate card
+      currentSurah = surah;
+      currentAyah  = ayah;
+
+      displayRef.textContent      = `${surah}:${ayah}`;
+      displayReciter.textContent  = RECITERS[slug] || slug;
+      arabicText.textContent      = verseData.arabic;
+      translationEl.textContent   = verseData.translation;
+
+      nowPlaying.classList.add('visible');
+      clearStatus();
+
+      if (autoplay) {
+        try {
+          await audio.play();
+          setPlayingState(true);
+        } catch {
+          // Autoplay blocked by browser — user can click Play
+        }
+      }
+    }
+
+    /* ────────────────────────────────────────────────────────────
+       Trigger from search bar / button
+    ──────────────────────────────────────────────────────────── */
+    function handleSearch() {
+      const raw = verseInput.value.trim() || '53:2';
+      const parsed = parseRef(raw);
+      if (!parsed) {
+        setStatus(
+          'Invalid reference. Use surah:ayah format (e.g. 2:255). Surah must be 1–114.',
+          'error'
+        );
+        return;
+      }
+      loadVerse(parsed.surah, parsed.ayah, currentSlug);
+    }
+
+    /* ────────────────────────────────────────────────────────────
+       Audio element events
+    ──────────────────────────────────────────────────────────── */
+    audio.addEventListener('error', () => {
+      setStatus(
+        'Could not load audio for this verse. It may not exist for this reciter.',
+        'error'
+      );
+      nowPlaying.classList.remove('visible');
+      setPlayingState(false);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (isSeeking || !isFinite(audio.duration)) return;
+      seekBar.value             = (audio.currentTime / audio.duration) * 100;
+      currentTimeEl.textContent = formatTime(audio.currentTime);
+    });
+
+    audio.addEventListener('durationchange', () => {
+      if (isFinite(audio.duration)) {
+        totalTimeEl.textContent = formatTime(audio.duration);
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      setPlayingState(false);
+      resetSeek();
+    });
+
+    audio.addEventListener('play',  () => setPlayingState(true));
+    audio.addEventListener('pause', () => setPlayingState(false));
+
+    /* ────────────────────────────────────────────────────────────
+       Seek bar
+    ──────────────────────────────────────────────────────────── */
+    seekBar.addEventListener('mousedown',  () => { isSeeking = true; });
+    seekBar.addEventListener('touchstart', () => { isSeeking = true; }, { passive: true });
+
+    seekBar.addEventListener('input', () => {
+      if (isFinite(audio.duration)) {
+        currentTimeEl.textContent = formatTime((seekBar.value / 100) * audio.duration);
+      }
+    });
+
+    seekBar.addEventListener('change', () => {
+      isSeeking = false;
+      if (isFinite(audio.duration)) {
+        audio.currentTime = (seekBar.value / 100) * audio.duration;
+      }
+    });
+
+    /* ────────────────────────────────────────────────────────────
+       Transport buttons
+    ──────────────────────────────────────────────────────────── */
+    playPauseBtn.addEventListener('click', () => {
+      if (currentSurah === null || !audio.src) return;
+      if (audio.paused) {
+        audio.play().then(() => setPlayingState(true)).catch(() => {});
+      } else {
+        audio.pause();
+      }
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (currentSurah === null) return;
+      const prev = currentAyah - 1;
+      if (prev < 1) return;
+      verseInput.value = `${currentSurah}:${prev}`;
+      loadVerse(currentSurah, prev, currentSlug);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentSurah === null) return;
+      const next = currentAyah + 1;
+      verseInput.value = `${currentSurah}:${next}`;
+      loadVerse(currentSurah, next, currentSlug);
+    });
+
+    /* ────────────────────────────────────────────────────────────
+       Reciter chips
+    ──────────────────────────────────────────────────────────── */
+    document.getElementById('reciters').addEventListener('click', e => {
+      const chip = e.target.closest('.reciter-chip');
+      if (!chip) return;
+
+      document.querySelectorAll('.reciter-chip')
+        .forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentSlug = chip.dataset.slug;
+
+      // If a verse is already loaded, reload with new reciter
+      if (currentSurah !== null) {
+        loadVerse(currentSurah, currentAyah, currentSlug);
+      }
+    });
+
+    /* ────────────────────────────────────────────────────────────
+       Quick-verse buttons
+    ──────────────────────────────────────────────────────────── */
+    document.getElementById('quickVerses').addEventListener('click', e => {
+      const btn = e.target.closest('.quick-btn');
+      if (!btn) return;
+      const ref    = btn.dataset.ref;
+      const parsed = parseRef(ref);
+      if (!parsed) return;
+      verseInput.value = ref;
+      loadVerse(parsed.surah, parsed.ayah, currentSlug);
+    });
+
+    /* ────────────────────────────────────────────────────────────
+       Keyboard
+    ──────────────────────────────────────────────────────────── */
+    verseInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSearch();
+    });
+
+    searchPlayBtn.addEventListener('click', handleSearch);
+  </script>
+</body>
+</html>
