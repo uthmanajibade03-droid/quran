@@ -412,19 +412,27 @@
 
     function parseCommand(raw, defaultSlug) {
       let rest = ' ' + (raw || '').trim() + ' ';
-      let speed = null, repeat = false, slug = null;
+      let speed = null, repeat = null, slug = null;
+      let faster = false, slower = false, transport = null;
 
       // ── speed ──
       let m = rest.match(/(\d+(?:\.\d+)?)\s*[x×]/i);
-      if (!m) m = rest.match(/\b(?:at|speed)\s+(\d+(?:\.\d+)?)\b/i);
+      if (!m) m = rest.match(/\bspeed\b\D*(\d+(?:\.\d+)?)/i);      // "speed to 1", "speed 1.25"
+      if (!m) m = rest.match(/\bat\s+(\d+(?:\.\d+)?)\b/i);
       if (m) { speed = parseFloat(m[1]); rest = rest.replace(m[0], ' '); }
       else if (/\bhalf\s+speed\b/i.test(rest)) { speed = 0.5; rest = rest.replace(/\bhalf\s+speed\b/i, ' '); }
       else if (/\b(double|twice)\s+speed\b/i.test(rest)) { speed = 2; rest = rest.replace(/\b(double|twice)\s+speed\b/i, ' '); }
       else if (/\bnormal\s+speed\b/i.test(rest)) { speed = 1; rest = rest.replace(/\bnormal\s+speed\b/i, ' '); }
+      if (/\b(faster|speed\s*up|quicker)\b/i.test(rest)) { faster = true; rest = rest.replace(/\b(faster|speed\s*up|quicker)\b/i, ' '); }
+      if (/\b(slower|slow\s*down)\b/i.test(rest)) { slower = true; rest = rest.replace(/\b(slower|slow\s*down)\b/i, ' '); }
 
-      // ── repeat ──
-      const rep = rest.match(/\bon\s+repeat\b|\brepeatedly\b|\brepeat\b|\bon\s+loop\b|\blooping\b|\bloop\b/i);
-      if (rep) { repeat = true; rest = rest.replace(rep[0], ' '); }
+      // ── repeat (on / off) ──
+      const offRe = /\b(no|stop|turn\s+off|disable|cancel|off)\s+(the\s+)?(repeat|loop(?:ing)?)\b|\brepeat\s+off\b|\bdon'?t\s+repeat\b|\bstop\s+looping\b/i;
+      if (offRe.test(rest)) { repeat = false; rest = rest.replace(offRe, ' '); }
+      else {
+        const rep = rest.match(/\bon\s+repeat\b|\brepeatedly\b|\brepeat\b|\bon\s+loop\b|\blooping\b|\bloop\b/i);
+        if (rep) { repeat = true; rest = rest.replace(rep[0], ' '); }
+      }
 
       // ── reciter ──
       const recPatterns = [
@@ -434,12 +442,32 @@
         [/\b(shatri|shaatree|abu[\s-]?bakr)\b/i, 'AbuBakrShatri'],
       ];
       for (const [re, val] of recPatterns) if (re.test(rest)) { slug = val; rest = rest.replace(re, ' '); }
-      rest = rest.replace(/\b(recited\s+by|reciter|by)\b/gi, ' ');
+      rest = rest.replace(/\b(switch\s+to|change\s+to|recited\s+by|reciter|by)\b/gi, ' ');
+
+      // ── transport ──
+      if (/\bpause\b/i.test(rest)) transport = 'pause';
+      else if (/\b(resume|continue|unpause)\b/i.test(rest)) transport = 'play';
+      else if (/\b(stop|halt)\b/i.test(rest)) transport = 'stop';
+      else if (/\b(next|forward|skip)\b/i.test(rest)) transport = 'next';
+      else if (/\b(previous|prev|back|before)\b/i.test(rest)) transport = 'prev';
+      else if (/\b(restart|again|start\s+over|from\s+(the\s+)?(start|beginning))\b/i.test(rest)) transport = 'restart';
 
       if (speed != null) { if (!isFinite(speed) || speed <= 0) speed = 1; speed = Math.min(4, Math.max(0.25, speed)); }
 
       const ref = parseRef(rest);
-      if (!ref) return { error: true };
+
+      if (!ref) {
+        // No verse — treat as a control command for the active player.
+        const control = {};
+        if (speed != null) control.speed = speed;
+        if (faster) control.faster = true;
+        if (slower) control.slower = true;
+        if (repeat != null) control.repeat = repeat;
+        if (slug) control.slug = slug;
+        if (transport) control.transport = transport;
+        return Object.keys(control).length ? { control } : { error: true };
+      }
+
       // "Ayat al-Kursi" is specifically 2:255 (unless explicit ayah given).
       if (/\bkursi\b/i.test(raw) && ref.surah === 2 && !/\d/.test(rest)) { ref.start = 255; ref.end = 255; }
       return {
@@ -447,7 +475,7 @@
           surah: ref.surah, start: ref.start, end: ref.end,
           slug: slug || defaultSlug || 'Alafasy',
           speed: speed == null ? 1 : speed,
-          repeat,
+          repeat: repeat === true,
         },
       };
     }
@@ -487,16 +515,31 @@
       return list;
     }
 
+    const textCache = {};
     async function fetchVerseData(surah, ayah) {
+      const key = surah + ':' + ayah;
+      if (textCache[key]) return textCache[key];
       const url = `https://api.qurancdn.com/api/qdc/verses/by_key/${surah}:${ayah}`
                 + `?language=en&words=false&translations=131&fields=text_uthmani`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`API ${res.status}`);
       const { verse } = await res.json();
-      return {
+      const data = {
         arabic: verse.text_uthmani || '',
         translation: verse.translations?.[0]?.text ? stripHtml(verse.translations[0].text) : '',
       };
+      textCache[key] = data;
+      return data;
+    }
+
+    // Populate a card's starting-ayah text so it shows even when not active.
+    function fillCardText(card, spec) {
+      fetchVerseData(spec.surah, spec.start).then(vd => {
+        if (!card.isConnected) return;
+        const a = card.querySelector('.pc-arabic'), t = card.querySelector('.pc-trans');
+        if (a && !a.textContent) a.textContent = vd.arabic;
+        if (t && !t.textContent) t.textContent = vd.translation;
+      }).catch(() => {});
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -565,11 +608,54 @@
       }
       engine.activeCard = card;
       card.classList.add('active');
-      engine.spec = { ...spec };
+      engine.spec = spec;   // same object as the stored message spec → edits persist
       engine.playlist = [];
       for (let a = spec.start; a <= spec.end; a++) engine.playlist.push({ surah: spec.surah, ayah: a });
       engine.plIndex = 0;
       engineLoad(autoplay);
+    }
+
+    // Apply a follow-up control command to the active player.
+    function applyControl(control) {
+      if (!engine.activeCard || !engine.spec)
+        return "Nothing is playing yet — ask me to play a verse first, e.g. “play Al-Fatihah”.";
+
+      const spec = engine.spec, card = engine.activeCard, parts = [];
+
+      let newSpeed = spec.speed;
+      if (control.speed != null) newSpeed = control.speed;
+      if (control.faster) newSpeed = Math.min(4, (newSpeed || 1) + 0.25);
+      if (control.slower) newSpeed = Math.max(0.25, (newSpeed || 1) - 0.25);
+      if (newSpeed !== spec.speed) { spec.speed = newSpeed; audio.playbackRate = newSpeed; updateCardBadges(card); parts.push(`speed ${newSpeed}×`); }
+
+      if (control.repeat != null && control.repeat !== spec.repeat) {
+        spec.repeat = control.repeat; updateCardBadges(card);
+        parts.push(control.repeat ? 'repeat on' : 'repeat off');
+      }
+
+      if (control.slug && control.slug !== spec.slug) {
+        spec.slug = control.slug; updateCardBadges(card);
+        engineLoad(!audio.paused);
+        parts.push(RECITERS[control.slug]?.name || control.slug);
+      }
+
+      switch (control.transport) {
+        case 'pause': audio.pause(); parts.push('paused'); break;
+        case 'play': audio.play().catch(() => {}); parts.push('resumed'); break;
+        case 'stop': audio.pause(); audio.currentTime = 0; parts.push('stopped'); break;
+        case 'restart': engine.plIndex = 0; engineLoad(true); parts.push('restarted'); break;
+        case 'next':
+          if (engine.plIndex < engine.playlist.length - 1) { engine.plIndex++; engineLoad(true); }
+          else { const c = engine.playlist[engine.plIndex]; engine.playlist.push({ surah: c.surah, ayah: c.ayah + 1 }); engine.plIndex++; engineLoad(true); }
+          parts.push('next ayah'); break;
+        case 'prev':
+          if (engine.plIndex > 0) { engine.plIndex--; engineLoad(true); }
+          else { const c = engine.playlist[0]; if (c.ayah > 1) { engine.playlist.unshift({ surah: c.surah, ayah: c.ayah - 1 }); engineLoad(true); } }
+          parts.push('previous ayah'); break;
+      }
+
+      saveStore();
+      return parts.length ? 'Done — ' + parts.join(', ') + '.' : 'Okay.';
     }
 
     async function engineLoad(autoplay) {
@@ -681,7 +767,18 @@
         </div>`;
       cardSpec.set(card, spec);
       wireCard(card);
+      fillCardText(card, spec);
       return card;
+    }
+
+    function updateCardBadges(card) {
+      const spec = cardSpec.get(card);
+      if (!spec) return;
+      const badges = [`<span class="badge">${RECITERS[spec.slug]?.name || spec.slug}</span>`];
+      if (spec.speed !== 1) badges.push(`<span class="badge on">${spec.speed}×</span>`);
+      if (spec.repeat) badges.push(`<span class="badge on">↻ repeat</span>`);
+      const box = card.querySelector('.pc-badges');
+      if (box) box.innerHTML = badges.join('');
     }
 
     function wireCard(card) {
@@ -719,37 +816,61 @@
       });
     }
 
+    function buildMessageRow(msg) {
+      if (msg.role === 'user') {
+        const row = document.createElement('div');
+        row.className = 'msg user';
+        row.innerHTML = `<div class="bubble-user"></div>`;
+        row.querySelector('.bubble-user').textContent = msg.text;
+        return { row, card: null };
+      }
+      const row = document.createElement('div');
+      row.className = 'msg assistant';
+      const wrap = document.createElement('div');
+      wrap.className = 'assistant-wrap';
+      const line = document.createElement('div');
+      line.className = 'assistant-line' + (msg.error ? ' err' : '');
+      line.textContent = msg.summary;
+      wrap.appendChild(line);
+      let card = null;
+      if (msg.spec) { card = createPlayerCard(msg.spec); wrap.appendChild(card); }
+      row.appendChild(wrap);
+      return { row, card };
+    }
+
+    function ensureInner() {
+      let inner = messagesEl.querySelector('.messages-inner');
+      if (!inner) {
+        messagesEl.innerHTML = '';
+        inner = document.createElement('div');
+        inner.className = 'messages-inner';
+        messagesEl.appendChild(inner);
+      }
+      return inner;
+    }
+
+    function appendOne(msg) {
+      const inner = ensureInner();
+      const { row, card } = buildMessageRow(msg);
+      inner.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return card;
+    }
+
     function renderMessages() {
       const chat = currentChat();
       messagesEl.innerHTML = '';
       engine.activeCard = null;
       chatTitleEl.textContent = chat ? chat.title : 'New chat';
-
-      if (!chat || chat.messages.length === 0) { renderEmpty(); return; }
+      if (!chat || chat.messages.length === 0) { renderEmpty(); return null; }
 
       const inner = document.createElement('div');
       inner.className = 'messages-inner';
       let lastCard = null;
       for (const msg of chat.messages) {
-        if (msg.role === 'user') {
-          const row = document.createElement('div');
-          row.className = 'msg user';
-          row.innerHTML = `<div class="bubble-user"></div>`;
-          row.querySelector('.bubble-user').textContent = msg.text;
-          inner.appendChild(row);
-        } else {
-          const row = document.createElement('div');
-          row.className = 'msg assistant';
-          const wrap = document.createElement('div');
-          wrap.className = 'assistant-wrap';
-          const line = document.createElement('div');
-          line.className = 'assistant-line' + (msg.error ? ' err' : '');
-          line.textContent = msg.summary;
-          wrap.appendChild(line);
-          if (msg.spec) { const c = createPlayerCard(msg.spec); wrap.appendChild(c); lastCard = c; }
-          row.appendChild(wrap);
-          inner.appendChild(row);
-        }
+        const { row, card } = buildMessageRow(msg);
+        inner.appendChild(row);
+        if (card) lastCard = card;
       }
       messagesEl.appendChild(inner);
       messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -850,27 +971,32 @@
 
       const defSlug = lastSlugInChat();
       const chat = currentChat();
-      chat.messages.push({ role: 'user', text });
+      const userMsg = { role: 'user', text };
+      chat.messages.push(userMsg);
+      appendOne(userMsg);
 
       const parsed = parseCommand(text, defSlug);
-      let assistant;
-      if (parsed.error) {
-        assistant = { role: 'assistant', error: true,
-          summary: "I couldn't find a surah/verse in that. Try e.g. “Al-Araf 132-134 on repeat at 1.5x”, “2:255”, or a name like “Ya-Sin”." };
-      } else {
+      let assistant, cardToActivate = null;
+
+      if (parsed.spec) {
         assistant = { role: 'assistant', spec: parsed.spec, summary: specSummary(parsed.spec) };
+      } else if (parsed.control) {
+        const msg = applyControl(parsed.control);
+        assistant = { role: 'assistant', summary: msg };
+      } else {
+        assistant = { role: 'assistant', error: true,
+          summary: "I couldn't find a surah/verse in that. Try e.g. “Al-Araf 132-134 on repeat at 1.5x”, “2:255”, a name like “Ya-Sin”, or a control like “pause”, “faster”, “stop repeat”." };
       }
       chat.messages.push(assistant);
+      cardToActivate = appendOne(assistant);
 
-      // Title from first user message.
       if (chat.title === 'New chat') chat.title = text.length > 42 ? text.slice(0, 42) + '…' : text;
 
       commitDraftIfNeeded();
       saveStore();
       renderSidebar();
-      const lastCard = renderMessages();
 
-      if (assistant.spec && lastCard) activate(lastCard, true);
+      if (assistant.spec && cardToActivate) activate(cardToActivate, true);
     }
 
     /* ══════════════════════════════════════════════════════════════
