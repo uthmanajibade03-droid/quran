@@ -8,511 +8,309 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg: #0d0d0d;
-      --bg-card: #131313;
+      --bg-2: #111;
+      --bg-card: #161616;
+      --bg-user: #1d2733;
       --text: #e8e8e8;
-      --text-muted: #777;
+      --text-muted: #7c7c7c;
       --text-arabic: #f0ead6;
       --border: rgba(255, 255, 255, 0.1);
       --accent: #c8a96e;
       --error: #e05c5c;
     }
 
+    html, body { height: 100%; }
     body {
       background: var(--bg);
       color: var(--text);
       font-family: 'IBM Plex Sans', sans-serif;
-      min-height: 100vh;
+      font-size: 15px;
+    }
+
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 264px;
+      flex-shrink: 0;
+      background: var(--bg-2);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 2.5rem 1rem 4rem;
+      transition: transform 0.2s ease;
     }
 
-    .container {
-      width: 100%;
-      max-width: 660px;
+    .sidebar-head {
+      padding: 0.9rem;
+      border-bottom: 1px solid var(--border);
     }
 
-    /* ── Header ── */
-    header {
-      text-align: center;
-      margin-bottom: 2.75rem;
-    }
-
-    header h1 {
-      font-size: 1.5rem;
-      font-weight: 400;
-      letter-spacing: 0.06em;
-      color: var(--accent);
-    }
-
-    header p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-top: 0.4rem;
-      letter-spacing: 0.03em;
-    }
-
-    /* ── Search row ── */
-    .search-row {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .verse-input {
-      flex: 1;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.7rem 1rem;
-      color: var(--text);
-      font-family: 'IBM Plex Sans', monospace;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .verse-input::placeholder { color: var(--text-muted); }
-    .verse-input:focus { border-color: rgba(200, 169, 110, 0.6); }
-
-    .search-play-btn {
-      background: var(--accent);
-      border: none;
-      border-radius: 8px;
-      padding: 0.7rem 1.4rem;
-      color: #0d0d0d;
-      font-family: 'IBM Plex Sans', sans-serif;
+    .brand {
       font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      white-space: nowrap;
-    }
-
-    .search-play-btn:hover { opacity: 0.82; }
-
-    /* ── Quick verses ── */
-    .quick-verses {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      margin-bottom: 1.75rem;
-    }
-
-    .quick-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 0.28rem 0.75rem;
-      color: var(--text-muted);
-      font-family: 'IBM Plex Sans', monospace;
-      font-size: 0.78rem;
-      cursor: pointer;
-      transition: all 0.18s;
-    }
-
-    .quick-btn:hover {
-      border-color: var(--accent);
       color: var(--accent);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.8rem;
+      padding: 0 0.2rem;
     }
 
-    /* ── Reciter chips ── */
-    .section-label {
-      font-size: 0.7rem;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 0.55rem;
-    }
-
-    .reciters {
+    .new-chat {
+      width: 100%;
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      margin-bottom: 2rem;
-    }
-
-    .reciter-chip {
+      align-items: center;
+      gap: 0.5rem;
       background: transparent;
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 0.32rem 0.85rem;
-      color: var(--text-muted);
-      font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 0.82rem;
-      cursor: pointer;
-      transition: all 0.18s;
-    }
-
-    .reciter-chip:hover {
-      border-color: rgba(255, 255, 255, 0.28);
-      color: var(--text);
-    }
-
-    .reciter-chip.active {
-      background: #e8e8e8;
-      border-color: #e8e8e8;
-      color: #0d0d0d;
-      font-weight: 500;
-    }
-
-    /* ── Status / error ── */
-    .status {
-      display: none;
-      text-align: center;
-      font-size: 0.83rem;
-      padding: 0.7rem 1rem;
       border-radius: 8px;
-      margin-bottom: 1.25rem;
+      padding: 0.55rem 0.75rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
     }
+    .new-chat:hover { border-color: var(--accent); color: var(--accent); }
+    .new-chat svg { width: 15px; height: 15px; }
 
-    .status.loading {
-      display: block;
+    .chat-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 0.6rem;
+      border-radius: 7px;
       color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
+      font-size: 0.83rem;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: background 0.12s, color 0.12s;
     }
-
-    .status.error {
-      display: block;
-      color: var(--error);
-      background: rgba(224, 92, 92, 0.07);
-      border: 1px solid rgba(224, 92, 92, 0.2);
+    .chat-item:hover { background: rgba(255, 255, 255, 0.04); color: var(--text); }
+    .chat-item.active { background: rgba(200, 169, 110, 0.12); color: var(--text); }
+    .chat-item .title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .chat-item .del {
+      opacity: 0;
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 2px;
+      flex-shrink: 0;
     }
+    .chat-item:hover .del { opacity: 0.6; }
+    .chat-item .del:hover { opacity: 1; color: var(--error); }
 
-    /* ── Now-playing card ── */
-    .now-playing {
+    /* ── Main column ── */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .topbar {
+      height: 52px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar .menu-btn {
       display: none;
+      background: none; border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text);
+      width: 34px; height: 34px; cursor: pointer;
+      align-items: center; justify-content: center;
+    }
+    .topbar .chat-title {
+      font-size: 0.9rem; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 1rem 1rem;
+    }
+    .messages-inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.1rem; }
+
+    /* ── Empty state ── */
+    .empty {
+      max-width: 620px; margin: 8vh auto 0; text-align: center;
+    }
+    .empty h2 { font-weight: 400; color: var(--accent); font-size: 1.3rem; letter-spacing: 0.04em; }
+    .empty p { color: var(--text-muted); font-size: 0.9rem; margin: 0.6rem 0 1.6rem; }
+    .examples { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+    .example {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+      padding: 0.4rem 0.9rem; color: var(--text-muted); font-size: 0.82rem;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .example:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Message bubbles ── */
+    .msg { display: flex; }
+    .msg.user { justify-content: flex-end; }
+    .bubble-user {
+      background: var(--bg-user);
+      border: 1px solid rgba(120, 160, 200, 0.18);
+      border-radius: 14px 14px 4px 14px;
+      padding: 0.6rem 0.9rem;
+      max-width: 80%;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .msg.assistant { justify-content: flex-start; }
+    .assistant-wrap { max-width: 92%; width: 100%; }
+    .assistant-line {
+      font-size: 0.86rem; color: var(--text-muted); margin-bottom: 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .assistant-line.err { color: var(--error); }
+
+    /* ── Player card ── */
+    .player-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 1.6rem;
+      padding: 1.3rem;
     }
+    .player-card.active { border-color: rgba(200, 169, 110, 0.45); }
 
-    .now-playing.visible { display: block; }
-
-    .verse-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 0.75rem;
-      margin-bottom: 1.4rem;
+    .pc-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem; }
+    .pc-ref { font-family: monospace; font-size: 0.88rem; font-weight: 500; color: var(--accent); display: block; }
+    .pc-sub { display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .pc-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: flex-end; }
+    .badge {
+      font-size: 0.66rem; letter-spacing: 0.03em;
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.12rem 0.5rem; color: var(--text-muted); white-space: nowrap;
     }
+    .badge.on { border-color: rgba(200, 169, 110, 0.5); color: var(--accent); }
 
-    .verse-ref {
-      font-family: 'IBM Plex Sans', monospace;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--accent);
-    }
-
-    .verse-sub {
-      display: block;
-      font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      margin-top: 0.15rem;
-    }
-
-    .reciter-display {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    /* ── Arabic block ── */
-    .arabic-block {
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 1.5rem 0.25rem;
-      margin-bottom: 1.2rem;
-      text-align: right;
-    }
-
-    .arabic-text {
+    .pc-arabic {
       font-family: 'IBM Plex Sans Arabic', sans-serif;
-      font-size: 2rem;
-      font-weight: 400;
-      line-height: 1.85;
-      color: var(--text-arabic);
-      direction: rtl;
+      font-size: 1.7rem; line-height: 1.9; color: var(--text-arabic);
+      direction: rtl; text-align: right;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 1.1rem 0.15rem; margin-bottom: 0.9rem;
+      min-height: 2.5rem;
     }
+    .pc-trans { font-size: 0.85rem; line-height: 1.7; color: var(--text-muted); font-style: italic; }
+    .pc-status { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.4rem; min-height: 0; }
+    .pc-status.err { color: var(--error); }
 
-    .translation-text {
-      font-size: 0.88rem;
-      line-height: 1.75;
-      color: var(--text-muted);
-      font-style: italic;
+    .pc-controls {
+      display: flex; align-items: center; justify-content: center; gap: 1rem;
+      margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--border);
     }
-
-    /* ── Audio controls ── */
-    .audio-controls {
-      margin-top: 1.4rem;
-      padding-top: 1.2rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .controls-buttons {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1.1rem;
-      margin-bottom: 1rem;
-    }
-
     .ctrl-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.18s;
-      flex-shrink: 0;
+      background: transparent; border: 1px solid var(--border); border-radius: 50%;
+      width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+      color: var(--text); cursor: pointer; transition: all 0.15s; flex-shrink: 0;
     }
+    .ctrl-btn:hover { border-color: rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.04); }
+    .ctrl-btn.primary { width: 48px; height: 48px; background: var(--accent); border-color: var(--accent); color: #0d0d0d; }
+    .ctrl-btn.primary:hover { opacity: 0.85; background: var(--accent); }
 
-    .ctrl-btn:hover {
-      border-color: rgba(255, 255, 255, 0.28);
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    .ctrl-btn.primary {
-      width: 50px;
-      height: 50px;
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #0d0d0d;
-    }
-
-    .ctrl-btn.primary:hover {
-      opacity: 0.82;
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .ctrl-btn.active {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(200, 169, 110, 0.08);
-    }
-
-    /* ── Seek bar ── */
-    .seek-row {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-    }
-
-    .time {
-      font-family: 'IBM Plex Sans', monospace;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      min-width: 36px;
-    }
-
+    .seek-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.9rem; }
+    .time { font-family: monospace; font-size: 0.7rem; color: var(--text-muted); min-width: 34px; }
     .time.end { text-align: right; }
-
     .seek-bar {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
+      flex: 1; -webkit-appearance: none; appearance: none; height: 3px;
+      background: rgba(255, 255, 255, 0.12); border-radius: 2px; outline: none; cursor: pointer;
     }
+    .seek-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+    .seek-bar::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
 
-    .seek-bar::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
+    /* ── Composer ── */
+    .composer-wrap { flex-shrink: 0; border-top: 1px solid var(--border); padding: 0.85rem 1rem 1.1rem; }
+    .composer { max-width: 720px; margin: 0 auto; display: flex; gap: 0.5rem; }
+    .composer input {
+      flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.75rem 1rem; color: var(--text); font-family: inherit; font-size: 0.95rem; outline: none;
+      transition: border-color 0.2s;
     }
-
-    .seek-bar::-moz-range-thumb {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      border: none;
+    .composer input::placeholder { color: var(--text-muted); }
+    .composer input:focus { border-color: rgba(200, 169, 110, 0.6); }
+    .send-btn {
+      background: var(--accent); border: none; border-radius: 10px; width: 46px;
+      color: #0d0d0d; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.15s;
     }
+    .send-btn:hover { opacity: 0.85; }
+    .composer-hint { max-width: 720px; margin: 0.5rem auto 0; font-size: 0.72rem; color: var(--text-muted); text-align: center; }
 
-    /* ── Responsive ── */
-    @media (max-width: 480px) {
-      body { padding: 1.75rem 0.85rem 3rem; }
-      .arabic-text { font-size: 1.6rem; }
-      .reciters { gap: 0.4rem; }
-      .quick-verses { gap: 0.4rem; }
+    .backdrop { display: none; }
+
+    /* ── Mobile ── */
+    @media (max-width: 760px) {
+      .sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0; z-index: 30;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .topbar .menu-btn { display: flex; }
+      .backdrop.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 20; }
+      .pc-arabic { font-size: 1.45rem; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="brand">Quran Audio Player</div>
+        <button class="new-chat" id="newChatBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New chat
+        </button>
+      </div>
+      <div class="chat-list" id="chatList"></div>
+    </aside>
 
-    <header>
-      <h1>Quran Audio Player</h1>
-      <p>Type a surah name or number, a verse, or a range</p>
-    </header>
+    <div class="backdrop" id="backdrop"></div>
 
-    <!-- Verse input -->
-    <div class="search-row">
-      <input id="verseInput" class="verse-input" type="text"
-             placeholder="Al-Araf 132-134  ·  7:132  ·  2:255"
-             autocomplete="off" spellcheck="false">
-      <button id="searchPlayBtn" class="search-play-btn">Play</button>
-    </div>
-
-    <!-- Quick verses -->
-    <div class="quick-verses" id="quickVerses">
-      <button class="quick-btn" data-ref="1:1-7">Al-Fatihah</button>
-      <button class="quick-btn" data-ref="2:255">2:255</button>
-      <button class="quick-btn" data-ref="7:132-134">Al-Araf 132-134</button>
-      <button class="quick-btn" data-ref="36:1-5">Ya-Sin</button>
-      <button class="quick-btn" data-ref="55:1-13">Ar-Rahman</button>
-      <button class="quick-btn" data-ref="112:1-4">Al-Ikhlas</button>
-      <button class="quick-btn" data-ref="114:1-6">An-Nas</button>
-    </div>
-
-    <!-- Reciter selector -->
-    <div class="section-label">Reciter</div>
-    <div class="reciters" id="reciters">
-      <button class="reciter-chip active" data-slug="Alafasy">Mishary Alafasy</button>
-      <button class="reciter-chip" data-slug="AbdulBaset">Abdul Basit</button>
-      <button class="reciter-chip" data-slug="Husary">Mahmoud Al-Husary</button>
-      <button class="reciter-chip" data-slug="AbuBakrShatri">Abu Bakr Al-Shatri</button>
-    </div>
-
-    <!-- Status / error banner -->
-    <div class="status" id="status"></div>
-
-    <!-- Now-playing card -->
-    <div class="now-playing" id="nowPlaying">
-      <div class="verse-meta">
-        <span class="verse-ref" id="displayRef">
-          <span id="displayRefMain"></span>
-          <span class="verse-sub" id="displaySub"></span>
-        </span>
-        <span class="reciter-display" id="displayReciter"></span>
+    <!-- Main -->
+    <main class="main">
+      <div class="topbar">
+        <button class="menu-btn" id="menuBtn" title="Menu">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="chat-title" id="chatTitle">New chat</span>
       </div>
 
-      <div class="arabic-block">
-        <div class="arabic-text" id="arabicText" lang="ar" dir="rtl"></div>
-      </div>
+      <div class="messages" id="messages"></div>
 
-      <div class="translation-text" id="translationText"></div>
-
-      <div class="audio-controls">
-        <div class="controls-buttons">
-          <!-- Prev -->
-          <button class="ctrl-btn" id="prevBtn" title="Previous ayah">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="19 20 9 12 19 4 19 20"/>
-              <line x1="5" y1="19" x2="5" y2="5"/>
-            </svg>
-          </button>
-
-          <!-- Play / Pause -->
-          <button class="ctrl-btn primary" id="playPauseBtn" title="Play / Pause">
-            <svg id="iconPlay" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            <svg id="iconPause" width="18" height="18" viewBox="0 0 24 24"
-                 fill="currentColor" style="display:none">
-              <rect x="6" y="4" width="4" height="16"/>
-              <rect x="14" y="4" width="4" height="16"/>
-            </svg>
-          </button>
-
-          <!-- Next -->
-          <button class="ctrl-btn" id="nextBtn" title="Next ayah">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="5 4 15 12 5 20 5 4"/>
-              <line x1="19" y1="5" x2="19" y2="19"/>
-            </svg>
-          </button>
-
-          <!-- Repeat -->
-          <button class="ctrl-btn" id="repeatBtn" title="Repeat verse / range">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="17 1 21 5 17 9"/>
-              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <polyline points="7 23 3 19 7 15"/>
-              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
+      <div class="composer-wrap">
+        <div class="composer">
+          <input id="composerInput" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Try: play Al-Araf 132-134 on repeat at 1.5x">
+          <button class="send-btn" id="sendBtn" title="Send">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
-
-        <!-- Seek bar -->
-        <div class="seek-row">
-          <span class="time" id="currentTime">0:00</span>
-          <input class="seek-bar" id="seekBar" type="range"
-                 min="0" max="100" value="0" step="0.1">
-          <span class="time end" id="totalTime">0:00</span>
-        </div>
+        <div class="composer-hint">Say a surah name/number, a verse or range, and optionally a reciter, “on repeat”, and a speed like “1.5x”.</div>
       </div>
-    </div>
-
+    </main>
   </div>
 
   <audio id="audio" preload="none"></audio>
 
   <script>
-    /* ────────────────────────────────────────────────────────────
-       Reciters. Each lists candidate audio sources tried in order —
-       everyayah.com folders first (stable, CORS-friendly), then the
-       quran.com CDN path as a fallback. Whichever loads first wins.
-    ──────────────────────────────────────────────────────────── */
+    /* ══════════════════════════════════════════════════════════════
+       Reciters — candidate audio sources tried in order (failover)
+    ══════════════════════════════════════════════════════════════ */
     const RECITERS = {
-      Alafasy: {
-        name: 'Mishary Alafasy',
-        everyayah: ['Alafasy_128kbps'],
-        qcom: 'Alafasy',
-      },
-      AbdulBaset: {
-        name: 'Abdul Basit',
-        everyayah: ['Abdul_Basit_Murattal_64kbps', 'Abdul_Basit_Murattal_192kbps'],
-        qcom: 'AbdulBaset/Murattal',
-      },
-      Husary: {
-        name: 'Mahmoud Al-Husary',
-        everyayah: ['Husary_128kbps', 'Husary_64kbps'],
-        qcom: 'Husary',
-      },
-      AbuBakrShatri: {
-        name: 'Abu Bakr Al-Shatri',
-        everyayah: ['Abu_Bakr_Ash-Shaatree_128kbps', 'Abu_Bakr_Ash-Shaatree_64kbps'],
-        qcom: 'Shatri',
-      },
+      Alafasy:       { name: 'Mishary Alafasy',   everyayah: ['Alafasy_128kbps'], qcom: 'Alafasy' },
+      AbdulBaset:    { name: 'Abdul Basit',        everyayah: ['Abdul_Basit_Murattal_64kbps', 'Abdul_Basit_Murattal_192kbps'], qcom: 'AbdulBaset/Murattal' },
+      Husary:        { name: 'Mahmoud Al-Husary',  everyayah: ['Husary_128kbps', 'Husary_64kbps'], qcom: 'Husary' },
+      AbuBakrShatri: { name: 'Abu Bakr Al-Shatri', everyayah: ['Abu_Bakr_Ash-Shaatree_128kbps', 'Abu_Bakr_Ash-Shaatree_64kbps'], qcom: 'Shatri' },
     };
 
-    /* ────────────────────────────────────────────────────────────
-       Surah names (1–114) for name/number resolution
-    ──────────────────────────────────────────────────────────── */
+    /* ══════════════════════════════════════════════════════════════
+       Surah names (1–114)
+    ══════════════════════════════════════════════════════════════ */
     const SURAH_NAMES = [
       null,
       'Al-Fatihah','Al-Baqarah','Ali ‘Imran','An-Nisa','Al-Ma’idah',
@@ -540,16 +338,12 @@
       'Al-Masad','Al-Ikhlas','Al-Falaq','An-Nas',
     ];
 
-    // Build a normalized-name → number lookup, plus article-stripped variants.
     const NAME_LOOKUP = (() => {
       const map = {};
       const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-      // Longest first so 'ash'/'adh'/'ath' win over 'as'/'ad'/'at'.
       const articles = ['ash', 'adh', 'ath', 'al', 'ad', 'ar', 'as', 'at', 'an', 'az'];
       const strip = n => {
-        for (const a of articles) {
-          if (n.startsWith(a) && n.length > a.length + 1) return n.slice(a.length);
-        }
+        for (const a of articles) if (n.startsWith(a) && n.length > a.length + 1) return n.slice(a.length);
         return n;
       };
       for (let i = 1; i < SURAH_NAMES.length; i++) {
@@ -558,47 +352,34 @@
         const s = strip(n);
         if (!(s in map)) map[s] = i;
       }
-      // Handy aliases people actually type.
       const aliases = {
-        yaseen: 36, yasin: 36, taha: 20, fatiha: 1, fatihah: 1,
-        ikhlas: 112, kafiroon: 109, muminoon: 23, imran: 3,
-        alimran: 3, aleimran: 3, kursi: 2, ayatulkursi: 2,
+        yaseen: 36, yasin: 36, taha: 20, fatiha: 1, fatihah: 1, ikhlas: 112,
+        kafiroon: 109, muminoon: 23, imran: 3, alimran: 3, aleimran: 3,
+        kursi: 2, ayatulkursi: 2, ayatalkursi: 2,
       };
       for (const k in aliases) if (!(k in map)) map[k] = aliases[k];
       return map;
     })();
 
     function resolveSurah(token) {
-      const t = token.trim();
+      const t = (token || '').trim();
       if (!t) return null;
-      if (/^\d+$/.test(t)) {
-        const n = parseInt(t, 10);
-        return (n >= 1 && n <= 114) ? n : null;
-      }
+      if (/^\d+$/.test(t)) { const n = parseInt(t, 10); return (n >= 1 && n <= 114) ? n : null; }
       let key = t.toLowerCase().replace(/[^a-z0-9]/g, '');
-      // drop a leading "surah"/"sura"/"surat"/"chapter" prefix
       key = key.replace(/^(surahs?|surat|chapters?|chap)/, '') || key;
       if (key in NAME_LOOKUP) return NAME_LOOKUP[key];
-      // try stripping a leading article on the user's input too
       const articles = ['ash', 'adh', 'ath', 'al', 'ad', 'ar', 'as', 'at', 'an', 'az'];
-      for (const a of articles) {
-        if (key.startsWith(a)) {
-          const s = key.slice(a.length);
-          if (s in NAME_LOOKUP) return NAME_LOOKUP[s];
-        }
-      }
+      for (const a of articles) if (key.startsWith(a)) { const s = key.slice(a.length); if (s in NAME_LOOKUP) return NAME_LOOKUP[s]; }
       return null;
     }
 
-    /* ────────────────────────────────────────────────────────────
-       Parse the search box:
-         "7:132"  "7:132-134"  "Al-Araf 132"  "Al-Araf 132 to 134"
-         "36"     "2 255"      "ya-sin 1-5"
-    ──────────────────────────────────────────────────────────── */
-    function parseInput(raw) {
+    /* ══════════════════════════════════════════════════════════════
+       Reference parser (surah + ayah range) and command parser
+       (adds reciter, repeat, speed).
+    ══════════════════════════════════════════════════════════════ */
+    function parseRef(raw) {
       let s = (raw || '').trim();
       if (!s) return null;
-      // drop leading command words people say out loud: "play …", "recite …"
       s = s.replace(/^\s*(please\s+)?(play|recite|read|listen(\s+to)?|open|start|put\s+on)\s+/i, '');
       s = s.replace(/\bto\b/gi, '-').replace(/[–—]/g, '-');
 
@@ -609,19 +390,10 @@
         ayahPart = s.slice(colon + 1).trim();
       } else {
         const m = s.match(/\d+/);
-        if (!m) {
-          // name only → whole surah (ayah 1)
-          const only = resolveSurah(s);
-          return only ? { surah: only, start: 1, end: 1 } : null;
-        }
+        if (!m) { const only = resolveSurah(s); return only ? { surah: only, start: 1, end: 1 } : null; }
         const before = s.slice(0, m.index).trim();
-        if (before) {
-          surahTok = before;
-          ayahPart = s.slice(m.index).trim();
-        } else {
-          surahTok = m[0];
-          ayahPart = s.slice(m.index + m[0].length).trim();
-        }
+        if (before) { surahTok = before; ayahPart = s.slice(m.index).trim(); }
+        else { surahTok = m[0]; ayahPart = s.slice(m.index + m[0].length).trim(); }
       }
 
       const surah = resolveSurah(surahTok);
@@ -629,95 +401,83 @@
 
       const nums = ayahPart.match(/\d+/g);
       if (!nums || nums.length === 0) return { surah, start: 1, end: 1 };
-
       let start = parseInt(nums[0], 10);
       let end = start;
-      if (/-/.test(ayahPart) && nums.length >= 2) {
-        end = parseInt(nums[nums.length - 1], 10);
-      }
+      if (/-/.test(ayahPart) && nums.length >= 2) end = parseInt(nums[nums.length - 1], 10);
       if (!Number.isInteger(start) || start < 1) return null;
       if (end < start) end = start;
-      if (end - start > 285) end = start + 285;   // longest surah is 286 ayahs
+      if (end - start > 285) end = start + 285;
       return { surah, start, end };
     }
 
-    /* ────────────────────────────────────────────────────────────
-       State
-    ──────────────────────────────────────────────────────────── */
-    let playlist    = [];        // [{ surah, ayah }]
-    let plIndex     = 0;
-    let repeat      = false;
-    let currentSlug = 'Alafasy';
-    let isSeeking   = false;
-    let loadToken   = 0;         // guards against out-of-order async loads
-    let audioCands  = [];        // candidate audio URLs for the current ayah
-    let candIndex   = 0;         // which candidate we're currently trying
-    let intendPlay  = true;      // whether the user wants playback right now
+    function parseCommand(raw, defaultSlug) {
+      let rest = ' ' + (raw || '').trim() + ' ';
+      let speed = null, repeat = false, slug = null;
 
-    /* ────────────────────────────────────────────────────────────
-       Element refs
-    ──────────────────────────────────────────────────────────── */
-    const verseInput    = document.getElementById('verseInput');
-    const searchPlayBtn = document.getElementById('searchPlayBtn');
-    const statusEl      = document.getElementById('status');
-    const nowPlaying    = document.getElementById('nowPlaying');
-    const displayRefMain= document.getElementById('displayRefMain');
-    const displaySub    = document.getElementById('displaySub');
-    const displayReciter= document.getElementById('displayReciter');
-    const arabicText    = document.getElementById('arabicText');
-    const translationEl = document.getElementById('translationText');
-    const audio         = document.getElementById('audio');
-    const playPauseBtn  = document.getElementById('playPauseBtn');
-    const iconPlay      = document.getElementById('iconPlay');
-    const iconPause     = document.getElementById('iconPause');
-    const prevBtn       = document.getElementById('prevBtn');
-    const nextBtn       = document.getElementById('nextBtn');
-    const repeatBtn     = document.getElementById('repeatBtn');
-    const seekBar       = document.getElementById('seekBar');
-    const currentTimeEl = document.getElementById('currentTime');
-    const totalTimeEl   = document.getElementById('totalTime');
+      // ── speed ──
+      let m = rest.match(/(\d+(?:\.\d+)?)\s*[x×]/i);
+      if (!m) m = rest.match(/\b(?:at|speed)\s+(\d+(?:\.\d+)?)\b/i);
+      if (m) { speed = parseFloat(m[1]); rest = rest.replace(m[0], ' '); }
+      else if (/\bhalf\s+speed\b/i.test(rest)) { speed = 0.5; rest = rest.replace(/\bhalf\s+speed\b/i, ' '); }
+      else if (/\b(double|twice)\s+speed\b/i.test(rest)) { speed = 2; rest = rest.replace(/\b(double|twice)\s+speed\b/i, ' '); }
+      else if (/\bnormal\s+speed\b/i.test(rest)) { speed = 1; rest = rest.replace(/\bnormal\s+speed\b/i, ' '); }
 
-    /* ────────────────────────────────────────────────────────────
-       Helpers
-    ──────────────────────────────────────────────────────────── */
+      // ── repeat ──
+      const rep = rest.match(/\bon\s+repeat\b|\brepeatedly\b|\brepeat\b|\bon\s+loop\b|\blooping\b|\bloop\b/i);
+      if (rep) { repeat = true; rest = rest.replace(rep[0], ' '); }
+
+      // ── reciter ──
+      const recPatterns = [
+        [/\b(mishary|alafasy|afasy|al-?afasy)\b/i, 'Alafasy'],
+        [/\b(abdul[\s-]?basit|abdulbasit|basit|abdul[\s-]?basset)\b/i, 'AbdulBaset'],
+        [/\b(husary|husri|al-?husary)\b/i, 'Husary'],
+        [/\b(shatri|shaatree|abu[\s-]?bakr)\b/i, 'AbuBakrShatri'],
+      ];
+      for (const [re, val] of recPatterns) if (re.test(rest)) { slug = val; rest = rest.replace(re, ' '); }
+      rest = rest.replace(/\b(recited\s+by|reciter|by)\b/gi, ' ');
+
+      if (speed != null) { if (!isFinite(speed) || speed <= 0) speed = 1; speed = Math.min(4, Math.max(0.25, speed)); }
+
+      const ref = parseRef(rest);
+      if (!ref) return { error: true };
+      // "Ayat al-Kursi" is specifically 2:255 (unless explicit ayah given).
+      if (/\bkursi\b/i.test(raw) && ref.surah === 2 && !/\d/.test(rest)) { ref.start = 255; ref.end = 255; }
+      return {
+        spec: {
+          surah: ref.surah, start: ref.start, end: ref.end,
+          slug: slug || defaultSlug || 'Alafasy',
+          speed: speed == null ? 1 : speed,
+          repeat,
+        },
+      };
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       Small helpers
+    ══════════════════════════════════════════════════════════════ */
     const pad3 = n => String(n).padStart(3, '0');
+    const uid = () => 'c' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
 
     function formatTime(sec) {
       if (!isFinite(sec) || isNaN(sec)) return '0:00';
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
+      const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
       return `${m}:${String(s).padStart(2, '0')}`;
     }
+    function stripHtml(raw) { return raw.replace(/<[^>]+>/g, '').replace(/\[\d+\]/g, '').trim(); }
 
-    function stripHtml(raw) {
-      return raw
-        .replace(/<[^>]+>/g, '')
-        .replace(/\[\d+\]/g, '')
-        .trim();
+    function specTitle(spec) {
+      const name = SURAH_NAMES[spec.surah] || `Surah ${spec.surah}`;
+      const range = spec.end > spec.start ? `${spec.surah}:${spec.start}–${spec.end}` : `${spec.surah}:${spec.start}`;
+      return { name, range };
+    }
+    function specSummary(spec) {
+      const { name, range } = specTitle(spec);
+      const bits = [`${name} · ${range}`, RECITERS[spec.slug]?.name || spec.slug];
+      if (spec.speed !== 1) bits.push(`${spec.speed}×`);
+      if (spec.repeat) bits.push('on repeat');
+      return 'Playing ' + bits.join(' · ');
     }
 
-    function setStatus(msg, type) {
-      statusEl.textContent = msg;
-      statusEl.className   = `status ${type}`;
-    }
-
-    function clearStatus() {
-      statusEl.textContent = '';
-      statusEl.className   = 'status';
-    }
-
-    function setPlayingState(playing) {
-      iconPlay.style.display  = playing ? 'none' : '';
-      iconPause.style.display = playing ? ''     : 'none';
-    }
-
-    function resetSeek() {
-      seekBar.value             = 0;
-      currentTimeEl.textContent = '0:00';
-      totalTimeEl.textContent   = '0:00';
-    }
-
-    // Ordered list of audio URLs to try for one ayah/reciter.
     function buildCandidates(surah, ayah, slug) {
       const r = RECITERS[slug] || {};
       const p = pad3(surah) + pad3(ayah);
@@ -727,19 +487,6 @@
       return list;
     }
 
-    // Point the audio element at the current candidate; play if intended.
-    function playCandidate() {
-      if (candIndex >= audioCands.length) return;
-      audio.src = audioCands[candIndex];
-      audio.load();
-      if (intendPlay) {
-        audio.play().then(() => setPlayingState(true)).catch(() => {});
-      }
-    }
-
-    /* ────────────────────────────────────────────────────────────
-       API: verse text + reciter-correct audio URL
-    ──────────────────────────────────────────────────────────── */
     async function fetchVerseData(surah, ayah) {
       const url = `https://api.qurancdn.com/api/qdc/verses/by_key/${surah}:${ayah}`
                 + `?language=en&words=false&translations=131&fields=text_uthmani`;
@@ -747,221 +494,406 @@
       if (!res.ok) throw new Error(`API ${res.status}`);
       const { verse } = await res.json();
       return {
-        arabic:      verse.text_uthmani || '',
-        translation: verse.translations?.[0]?.text
-                       ? stripHtml(verse.translations[0].text)
-                       : '',
+        arabic: verse.text_uthmani || '',
+        translation: verse.translations?.[0]?.text ? stripHtml(verse.translations[0].text) : '',
       };
     }
 
-    /* ────────────────────────────────────────────────────────────
-       Playlist + loading
-    ──────────────────────────────────────────────────────────── */
-    function startPlaylist(surah, start, end, autoplay = true) {
-      playlist = [];
-      for (let a = start; a <= end; a++) playlist.push({ surah, ayah: a });
-      plIndex = 0;
-      loadCurrent(autoplay);
+    /* ══════════════════════════════════════════════════════════════
+       Persistence
+    ══════════════════════════════════════════════════════════════ */
+    const LS_KEY = 'quranChats_v1';
+    let store = { order: [], chats: {} };
+    let currentId = null;          // may reference an in-memory (unsaved) chat
+    let draftChat = null;          // unsaved "New chat" until first message
+
+    function loadStore() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) store = JSON.parse(raw);
+        if (!store.order) store = { order: [], chats: {} };
+      } catch { store = { order: [], chats: {} }; }
+    }
+    function saveStore() {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch {}
     }
 
-    async function loadCurrent(autoplay = true) {
-      const item = playlist[plIndex];
-      if (!item) return;
+    function currentChat() {
+      if (draftChat && currentId === draftChat.id) return draftChat;
+      return store.chats[currentId] || null;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       Audio engine (single element, bound to the active card)
+    ══════════════════════════════════════════════════════════════ */
+    const audio = document.getElementById('audio');
+    const engine = {
+      activeCard: null, spec: null, playlist: [], plIndex: 0,
+      cands: [], candIndex: 0, intendPlay: true, token: 0,
+    };
+    const cardSpec = new WeakMap();   // card element → spec
+
+    function refs(card) {
+      return {
+        card,
+        ref:   card.querySelector('.pc-ref'),
+        sub:   card.querySelector('.pc-sub'),
+        arabic:card.querySelector('.pc-arabic'),
+        trans: card.querySelector('.pc-trans'),
+        status:card.querySelector('.pc-status'),
+        play:  card.querySelector('.pc-play'),
+        iPlay: card.querySelector('.i-play'),
+        iPause:card.querySelector('.i-pause'),
+        seek:  card.querySelector('.pc-seek'),
+        cur:   card.querySelector('.pc-cur'),
+        tot:   card.querySelector('.pc-tot'),
+      };
+    }
+    function setCardPlaying(card, playing) {
+      if (!card) return;
+      const r = refs(card);
+      r.iPlay.style.display  = playing ? 'none' : '';
+      r.iPause.style.display = playing ? '' : 'none';
+    }
+
+    function activate(card, autoplay) {
+      const spec = cardSpec.get(card);
+      if (!spec) return;
+      if (engine.activeCard && engine.activeCard !== card) {
+        setCardPlaying(engine.activeCard, false);
+        engine.activeCard.classList.remove('active');
+      }
+      engine.activeCard = card;
+      card.classList.add('active');
+      engine.spec = { ...spec };
+      engine.playlist = [];
+      for (let a = spec.start; a <= spec.end; a++) engine.playlist.push({ surah: spec.surah, ayah: a });
+      engine.plIndex = 0;
+      engineLoad(autoplay);
+    }
+
+    async function engineLoad(autoplay) {
+      const card = engine.activeCard;
+      if (!card) return;
+      const r = refs(card);
+      const item = engine.playlist[engine.plIndex];
       const { surah, ayah } = item;
-      const myToken = ++loadToken;
+      const myToken = ++engine.token;
 
       audio.pause();
       audio.removeAttribute('src');
-      resetSeek();
-      setPlayingState(false);
-      setStatus('Loading…', 'loading');
+      r.seek.value = 0; r.cur.textContent = '0:00'; r.tot.textContent = '0:00';
+      setCardPlaying(card, false);
+      r.status.textContent = 'Loading…'; r.status.className = 'pc-status';
 
-      let verseData;
-      try {
-        verseData = await fetchVerseData(surah, ayah);
-      } catch (err) {
-        if (myToken !== loadToken) return;
-        setStatus('Could not fetch verse data. Check your connection and try again.', 'error');
-        return;
-      }
-      if (myToken !== loadToken) return;   // a newer load superseded this one
+      let vd;
+      try { vd = await fetchVerseData(surah, ayah); }
+      catch { if (myToken !== engine.token) return; r.status.textContent = 'Could not fetch verse text — check your connection.'; r.status.className = 'pc-status err'; return; }
+      if (myToken !== engine.token) return;
 
-      // Set up the audio candidate chain and start the first one.
-      audioCands = buildCandidates(surah, ayah, currentSlug);
-      candIndex  = 0;
-      intendPlay = autoplay;
+      const { name } = specTitle(engine.spec);
+      const first = engine.playlist[0].ayah, last = engine.playlist[engine.playlist.length - 1].ayah;
+      r.ref.textContent = `${surah}:${ayah}`;
+      r.sub.textContent = engine.playlist.length > 1 ? `${name} · ayah ${ayah} of ${first}–${last}` : name;
+      r.arabic.textContent = vd.arabic;
+      r.trans.textContent = vd.translation;
+      r.status.textContent = '';
+
+      engine.cands = buildCandidates(surah, ayah, engine.spec.slug);
+      engine.candIndex = 0;
+      engine.intendPlay = autoplay;
       playCandidate();
-
-      // Card
-      const name  = SURAH_NAMES[surah] || `Surah ${surah}`;
-      const first = playlist[0].ayah;
-      const last  = playlist[playlist.length - 1].ayah;
-
-      displayRefMain.textContent = `${surah}:${ayah}`;
-      displaySub.textContent = playlist.length > 1
-        ? `${name} · ayah ${ayah} of ${first}–${last}`
-        : name;
-      displayReciter.textContent = RECITERS[currentSlug]?.name || currentSlug;
-      arabicText.textContent     = verseData.arabic;
-      translationEl.textContent  = verseData.translation;
-
-      nowPlaying.classList.add('visible');
-      clearStatus();
     }
 
-    /* ────────────────────────────────────────────────────────────
-       Search box
-    ──────────────────────────────────────────────────────────── */
-    function handleSearch() {
-      const parsed = parseInput(verseInput.value);
-      if (!parsed) {
-        setStatus(
-          'Could not read that. Try a surah name or number, a verse, or a range — e.g. ' +
-          '“Al-Araf 132-134”, “7:132”, or “2:255”.',
-          'error'
-        );
-        return;
-      }
-      startPlaylist(parsed.surah, parsed.start, parsed.end);
+    function playCandidate() {
+      if (engine.candIndex >= engine.cands.length) return;
+      audio.src = engine.cands[engine.candIndex];
+      audio.load();
+      audio.playbackRate = engine.spec.speed || 1;
+      if (engine.intendPlay) audio.play().then(() => setCardPlaying(engine.activeCard, true)).catch(() => {});
     }
 
-    /* ────────────────────────────────────────────────────────────
-       Audio element events
-    ──────────────────────────────────────────────────────────── */
     audio.addEventListener('error', () => {
-      if (!audio.src) return;   // ignore the reset that clears src
-      // Failover: try the next candidate source before giving up.
-      if (candIndex < audioCands.length - 1) {
-        candIndex++;
-        playCandidate();
-        return;
+      if (!audio.src) return;
+      if (engine.candIndex < engine.cands.length - 1) { engine.candIndex++; playCandidate(); return; }
+      if (engine.activeCard) {
+        const r = refs(engine.activeCard);
+        r.status.textContent = 'Could not load audio from any source. Try a different reciter.';
+        r.status.className = 'pc-status err';
+        setCardPlaying(engine.activeCard, false);
       }
-      setStatus(
-        'Could not load audio for this verse from any source. Trying a different reciter may help.',
-        'error'
-      );
-      setPlayingState(false);
     });
-
-    audio.addEventListener('timeupdate', () => {
-      if (isSeeking || !isFinite(audio.duration)) return;
-      seekBar.value             = (audio.currentTime / audio.duration) * 100;
-      currentTimeEl.textContent = formatTime(audio.currentTime);
-    });
-
+    audio.addEventListener('play',  () => { audio.playbackRate = engine.spec?.speed || 1; setCardPlaying(engine.activeCard, true); });
+    audio.addEventListener('pause', () => setCardPlaying(engine.activeCard, false));
     audio.addEventListener('durationchange', () => {
-      if (isFinite(audio.duration)) totalTimeEl.textContent = formatTime(audio.duration);
+      if (engine.activeCard && isFinite(audio.duration)) refs(engine.activeCard).tot.textContent = formatTime(audio.duration);
     });
-
+    audio.addEventListener('timeupdate', () => {
+      if (!engine.activeCard || !isFinite(audio.duration)) return;
+      const r = refs(engine.activeCard);
+      if (r.seek.dataset.seeking === '1') return;
+      r.seek.value = (audio.currentTime / audio.duration) * 100;
+      r.cur.textContent = formatTime(audio.currentTime);
+    });
     audio.addEventListener('ended', () => {
-      if (plIndex < playlist.length - 1) {
-        plIndex++;
-        loadCurrent(true);
-      } else if (repeat) {
-        plIndex = 0;
-        loadCurrent(true);
+      if (engine.plIndex < engine.playlist.length - 1) { engine.plIndex++; engineLoad(true); }
+      else if (engine.spec?.repeat) { engine.plIndex = 0; engineLoad(true); }
+      else setCardPlaying(engine.activeCard, false);
+    });
+
+    /* ══════════════════════════════════════════════════════════════
+       Rendering
+    ══════════════════════════════════════════════════════════════ */
+    const messagesEl = document.getElementById('messages');
+    const chatListEl = document.getElementById('chatList');
+    const chatTitleEl = document.getElementById('chatTitle');
+    const composer = document.getElementById('composerInput');
+
+    const ICON_PREV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>';
+    const ICON_NEXT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>';
+    const ICON_PLAY = '<svg class="i-play" width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+    const ICON_PAUSE = '<svg class="i-pause" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+
+    function createPlayerCard(spec) {
+      const card = document.createElement('div');
+      card.className = 'player-card';
+      const badges = [`<span class="badge">${RECITERS[spec.slug]?.name || spec.slug}</span>`];
+      if (spec.speed !== 1) badges.push(`<span class="badge on">${spec.speed}×</span>`);
+      if (spec.repeat) badges.push(`<span class="badge on">↻ repeat</span>`);
+      const { name, range } = specTitle(spec);
+      card.innerHTML = `
+        <div class="pc-meta">
+          <div><span class="pc-ref">${range}</span><span class="pc-sub">${name}</span></div>
+          <div class="pc-badges">${badges.join('')}</div>
+        </div>
+        <div class="pc-arabic" dir="rtl" lang="ar"></div>
+        <div class="pc-trans"></div>
+        <div class="pc-status"></div>
+        <div class="pc-controls">
+          <button class="ctrl-btn pc-prev" title="Previous ayah">${ICON_PREV}</button>
+          <button class="ctrl-btn primary pc-play" title="Play / Pause">${ICON_PLAY}${ICON_PAUSE}</button>
+          <button class="ctrl-btn pc-next" title="Next ayah">${ICON_NEXT}</button>
+        </div>
+        <div class="seek-row">
+          <span class="time pc-cur">0:00</span>
+          <input class="seek-bar pc-seek" type="range" min="0" max="100" value="0" step="0.1">
+          <span class="time end pc-tot">0:00</span>
+        </div>`;
+      cardSpec.set(card, spec);
+      wireCard(card);
+      return card;
+    }
+
+    function wireCard(card) {
+      const playBtn = card.querySelector('.pc-play');
+      const prevBtn = card.querySelector('.pc-prev');
+      const nextBtn = card.querySelector('.pc-next');
+      const seek = card.querySelector('.pc-seek');
+
+      playBtn.addEventListener('click', () => {
+        if (engine.activeCard === card && audio.src) {
+          if (audio.paused) audio.play().catch(() => {}); else audio.pause();
+        } else {
+          activate(card, true);
+        }
+      });
+      prevBtn.addEventListener('click', () => {
+        if (engine.activeCard !== card) { activate(card, true); return; }
+        if (engine.plIndex > 0) { engine.plIndex--; engineLoad(true); }
+        else { const c = engine.playlist[0]; if (c.ayah > 1) { engine.playlist.unshift({ surah: c.surah, ayah: c.ayah - 1 }); engineLoad(true); } }
+      });
+      nextBtn.addEventListener('click', () => {
+        if (engine.activeCard !== card) { activate(card, true); return; }
+        if (engine.plIndex < engine.playlist.length - 1) { engine.plIndex++; engineLoad(true); }
+        else { const c = engine.playlist[engine.plIndex]; engine.playlist.push({ surah: c.surah, ayah: c.ayah + 1 }); engine.plIndex++; engineLoad(true); }
+      });
+      seek.addEventListener('mousedown', () => { seek.dataset.seeking = '1'; });
+      seek.addEventListener('touchstart', () => { seek.dataset.seeking = '1'; }, { passive: true });
+      seek.addEventListener('input', () => {
+        if (engine.activeCard === card && isFinite(audio.duration))
+          card.querySelector('.pc-cur').textContent = formatTime((seek.value / 100) * audio.duration);
+      });
+      seek.addEventListener('change', () => {
+        seek.dataset.seeking = '0';
+        if (engine.activeCard === card && isFinite(audio.duration)) audio.currentTime = (seek.value / 100) * audio.duration;
+      });
+    }
+
+    function renderMessages() {
+      const chat = currentChat();
+      messagesEl.innerHTML = '';
+      engine.activeCard = null;
+      chatTitleEl.textContent = chat ? chat.title : 'New chat';
+
+      if (!chat || chat.messages.length === 0) { renderEmpty(); return; }
+
+      const inner = document.createElement('div');
+      inner.className = 'messages-inner';
+      let lastCard = null;
+      for (const msg of chat.messages) {
+        if (msg.role === 'user') {
+          const row = document.createElement('div');
+          row.className = 'msg user';
+          row.innerHTML = `<div class="bubble-user"></div>`;
+          row.querySelector('.bubble-user').textContent = msg.text;
+          inner.appendChild(row);
+        } else {
+          const row = document.createElement('div');
+          row.className = 'msg assistant';
+          const wrap = document.createElement('div');
+          wrap.className = 'assistant-wrap';
+          const line = document.createElement('div');
+          line.className = 'assistant-line' + (msg.error ? ' err' : '');
+          line.textContent = msg.summary;
+          wrap.appendChild(line);
+          if (msg.spec) { const c = createPlayerCard(msg.spec); wrap.appendChild(c); lastCard = c; }
+          row.appendChild(wrap);
+          inner.appendChild(row);
+        }
+      }
+      messagesEl.appendChild(inner);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return lastCard;
+    }
+
+    function renderEmpty() {
+      const examples = [
+        'Play Al-Fatihah',
+        'Al-Araf 132-134 on repeat at 1.5x',
+        'Ayat al-Kursi by Husary',
+        'Ya-Sin 1-5 at 1.25x',
+      ];
+      const wrap = document.createElement('div');
+      wrap.className = 'empty';
+      wrap.innerHTML = `
+        <h2>Quran Audio Player</h2>
+        <p>Ask in plain language — pick a reciter, a verse or range, repeat, and speed.</p>
+        <div class="examples">${examples.map(e => `<button class="example">${e}</button>`).join('')}</div>`;
+      wrap.querySelectorAll('.example').forEach(b =>
+        b.addEventListener('click', () => { send(b.textContent); }));
+      messagesEl.appendChild(wrap);
+    }
+
+    function renderSidebar() {
+      chatListEl.innerHTML = '';
+      // Unsaved draft shows at the top.
+      if (draftChat && currentId === draftChat.id) {
+        chatListEl.appendChild(sidebarItem(draftChat.id, 'New chat', true));
+      }
+      for (const id of store.order) {
+        const chat = store.chats[id];
+        if (!chat) continue;
+        chatListEl.appendChild(sidebarItem(id, chat.title, id === currentId));
+      }
+    }
+    function sidebarItem(id, title, active) {
+      const el = document.createElement('div');
+      el.className = 'chat-item' + (active ? ' active' : '');
+      el.innerHTML = `<span class="title"></span><button class="del" title="Delete">×</button>`;
+      el.querySelector('.title').textContent = title;
+      el.querySelector('.title').addEventListener('click', () => openChat(id));
+      el.addEventListener('click', e => { if (!e.target.classList.contains('del')) openChat(id); });
+      el.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); deleteChat(id); });
+      return el;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       Chat actions
+    ══════════════════════════════════════════════════════════════ */
+    function newChat() {
+      draftChat = { id: uid(), title: 'New chat', createdAt: Date.now(), messages: [] };
+      currentId = draftChat.id;
+      audio.pause();
+      renderSidebar();
+      renderMessages();
+      composer.focus();
+      closeSidebarMobile();
+    }
+    function openChat(id) {
+      if (draftChat && id !== draftChat.id && draftChat.messages.length === 0) draftChat = null;
+      currentId = id;
+      audio.pause();
+      renderSidebar();
+      renderMessages();
+      closeSidebarMobile();
+    }
+    function deleteChat(id) {
+      delete store.chats[id];
+      store.order = store.order.filter(x => x !== id);
+      saveStore();
+      if (currentId === id) {
+        if (store.order.length) openChat(store.order[0]);
+        else newChat();
+      } else { renderSidebar(); }
+    }
+
+    function commitDraftIfNeeded() {
+      if (draftChat && currentId === draftChat.id) {
+        store.chats[draftChat.id] = draftChat;
+        store.order.unshift(draftChat.id);
+        draftChat = null;
+      }
+    }
+
+    function lastSlugInChat() {
+      const chat = currentChat();
+      if (!chat) return 'Alafasy';
+      for (let i = chat.messages.length - 1; i >= 0; i--)
+        if (chat.messages[i].spec) return chat.messages[i].spec.slug;
+      return 'Alafasy';
+    }
+
+    function send(text) {
+      text = (text || '').trim();
+      if (!text) return;
+      if (!currentChat()) newChat();
+
+      const defSlug = lastSlugInChat();
+      const chat = currentChat();
+      chat.messages.push({ role: 'user', text });
+
+      const parsed = parseCommand(text, defSlug);
+      let assistant;
+      if (parsed.error) {
+        assistant = { role: 'assistant', error: true,
+          summary: "I couldn't find a surah/verse in that. Try e.g. “Al-Araf 132-134 on repeat at 1.5x”, “2:255”, or a name like “Ya-Sin”." };
       } else {
-        setPlayingState(false);
-        resetSeek();
+        assistant = { role: 'assistant', spec: parsed.spec, summary: specSummary(parsed.spec) };
       }
+      chat.messages.push(assistant);
+
+      // Title from first user message.
+      if (chat.title === 'New chat') chat.title = text.length > 42 ? text.slice(0, 42) + '…' : text;
+
+      commitDraftIfNeeded();
+      saveStore();
+      renderSidebar();
+      const lastCard = renderMessages();
+
+      if (assistant.spec && lastCard) activate(lastCard, true);
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       Wiring
+    ══════════════════════════════════════════════════════════════ */
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    function openSidebarMobile() { sidebar.classList.add('open'); backdrop.classList.add('show'); }
+    function closeSidebarMobile() { sidebar.classList.remove('open'); backdrop.classList.remove('show'); }
+
+    document.getElementById('newChatBtn').addEventListener('click', newChat);
+    document.getElementById('menuBtn').addEventListener('click', openSidebarMobile);
+    backdrop.addEventListener('click', closeSidebarMobile);
+    document.getElementById('sendBtn').addEventListener('click', () => { const v = composer.value; composer.value = ''; send(v); });
+    composer.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); const v = composer.value; composer.value = ''; send(v); }
     });
 
-    audio.addEventListener('play',  () => setPlayingState(true));
-    audio.addEventListener('pause', () => setPlayingState(false));
-
-    /* ────────────────────────────────────────────────────────────
-       Seek bar
-    ──────────────────────────────────────────────────────────── */
-    seekBar.addEventListener('mousedown',  () => { isSeeking = true; });
-    seekBar.addEventListener('touchstart', () => { isSeeking = true; }, { passive: true });
-
-    seekBar.addEventListener('input', () => {
-      if (isFinite(audio.duration)) {
-        currentTimeEl.textContent = formatTime((seekBar.value / 100) * audio.duration);
-      }
-    });
-
-    seekBar.addEventListener('change', () => {
-      isSeeking = false;
-      if (isFinite(audio.duration)) {
-        audio.currentTime = (seekBar.value / 100) * audio.duration;
-      }
-    });
-
-    /* ────────────────────────────────────────────────────────────
-       Transport buttons
-    ──────────────────────────────────────────────────────────── */
-    playPauseBtn.addEventListener('click', () => {
-      if (!playlist.length || !audio.src) return;
-      if (audio.paused) {
-        audio.play().then(() => setPlayingState(true)).catch(() => {});
-      } else {
-        audio.pause();
-      }
-    });
-
-    prevBtn.addEventListener('click', () => {
-      if (!playlist.length) return;
-      if (plIndex > 0) {
-        plIndex--;
-        loadCurrent(true);
-      } else {
-        const cur = playlist[0];
-        if (cur.ayah > 1) startPlaylist(cur.surah, cur.ayah - 1, cur.ayah - 1);
-      }
-    });
-
-    nextBtn.addEventListener('click', () => {
-      if (!playlist.length) return;
-      if (plIndex < playlist.length - 1) {
-        plIndex++;
-        loadCurrent(true);
-      } else {
-        const cur = playlist[plIndex];
-        startPlaylist(cur.surah, cur.ayah + 1, cur.ayah + 1);
-      }
-    });
-
-    repeatBtn.addEventListener('click', () => {
-      repeat = !repeat;
-      repeatBtn.classList.toggle('active', repeat);
-      repeatBtn.title = repeat ? 'Repeat: on' : 'Repeat verse / range';
-    });
-
-    /* ────────────────────────────────────────────────────────────
-       Reciter chips
-    ──────────────────────────────────────────────────────────── */
-    document.getElementById('reciters').addEventListener('click', e => {
-      const chip = e.target.closest('.reciter-chip');
-      if (!chip) return;
-
-      document.querySelectorAll('.reciter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      currentSlug = chip.dataset.slug;
-
-      if (playlist.length) loadCurrent(true);   // reload current ayah with new reciter
-    });
-
-    /* ────────────────────────────────────────────────────────────
-       Quick-verse buttons
-    ──────────────────────────────────────────────────────────── */
-    document.getElementById('quickVerses').addEventListener('click', e => {
-      const btn = e.target.closest('.quick-btn');
-      if (!btn) return;
-      const parsed = parseInput(btn.dataset.ref);
-      if (!parsed) return;
-      verseInput.value = btn.dataset.ref;
-      startPlaylist(parsed.surah, parsed.start, parsed.end);
-    });
-
-    /* ────────────────────────────────────────────────────────────
-       Keyboard
-    ──────────────────────────────────────────────────────────── */
-    verseInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleSearch();
-    });
-
-    searchPlayBtn.addEventListener('click', handleSearch);
+    /* ── Boot ── */
+    loadStore();
+    renderSidebar();
+    if (store.order.length) { currentId = store.order[0]; renderMessages(); }
+    else newChat();
   </script>
 </body>
 </html>
