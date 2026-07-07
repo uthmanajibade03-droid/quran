@@ -483,13 +483,31 @@
 
   <script>
     /* ────────────────────────────────────────────────────────────
-       Reciters  →  Quran.com recitation IDs (api.quran.com v4)
+       Reciters. Each lists candidate audio sources tried in order —
+       everyayah.com folders first (stable, CORS-friendly), then the
+       quran.com CDN path as a fallback. Whichever loads first wins.
     ──────────────────────────────────────────────────────────── */
     const RECITERS = {
-      Alafasy:       { name: 'Mishary Alafasy',   id: 7 },
-      AbdulBaset:    { name: 'Abdul Basit',        id: 2 },  // Murattal
-      Husary:        { name: 'Mahmoud Al-Husary',  id: 6 },
-      AbuBakrShatri: { name: 'Abu Bakr Al-Shatri', id: 4 },
+      Alafasy: {
+        name: 'Mishary Alafasy',
+        everyayah: ['Alafasy_128kbps'],
+        qcom: 'Alafasy',
+      },
+      AbdulBaset: {
+        name: 'Abdul Basit',
+        everyayah: ['Abdul_Basit_Murattal_64kbps', 'Abdul_Basit_Murattal_192kbps'],
+        qcom: 'AbdulBaset/Murattal',
+      },
+      Husary: {
+        name: 'Mahmoud Al-Husary',
+        everyayah: ['Husary_128kbps', 'Husary_64kbps'],
+        qcom: 'Husary',
+      },
+      AbuBakrShatri: {
+        name: 'Abu Bakr Al-Shatri',
+        everyayah: ['Abu_Bakr_Ash-Shaatree_128kbps', 'Abu_Bakr_Ash-Shaatree_64kbps'],
+        qcom: 'Shatri',
+      },
     };
 
     /* ────────────────────────────────────────────────────────────
@@ -632,6 +650,9 @@
     let currentSlug = 'Alafasy';
     let isSeeking   = false;
     let loadToken   = 0;         // guards against out-of-order async loads
+    let audioCands  = [];        // candidate audio URLs for the current ayah
+    let candIndex   = 0;         // which candidate we're currently trying
+    let intendPlay  = true;      // whether the user wants playback right now
 
     /* ────────────────────────────────────────────────────────────
        Element refs
@@ -696,9 +717,24 @@
       totalTimeEl.textContent   = '0:00';
     }
 
-    // Direct-URL guess, used only if the audio API lookup fails.
-    function audioUrlGuess(surah, ayah, slug) {
-      return `https://verses.quran.com/${slug}/mp3/${pad3(surah)}${pad3(ayah)}.mp3`;
+    // Ordered list of audio URLs to try for one ayah/reciter.
+    function buildCandidates(surah, ayah, slug) {
+      const r = RECITERS[slug] || {};
+      const p = pad3(surah) + pad3(ayah);
+      const list = [];
+      (r.everyayah || []).forEach(f => list.push(`https://everyayah.com/data/${f}/${p}.mp3`));
+      if (r.qcom) list.push(`https://verses.quran.com/${r.qcom}/mp3/${p}.mp3`);
+      return list;
+    }
+
+    // Point the audio element at the current candidate; play if intended.
+    function playCandidate() {
+      if (candIndex >= audioCands.length) return;
+      audio.src = audioCands[candIndex];
+      audio.load();
+      if (intendPlay) {
+        audio.play().then(() => setPlayingState(true)).catch(() => {});
+      }
     }
 
     /* ────────────────────────────────────────────────────────────
@@ -716,23 +752,6 @@
                        ? stripHtml(verse.translations[0].text)
                        : '',
       };
-    }
-
-    async function fetchAudioUrl(surah, ayah, slug) {
-      const recId = RECITERS[slug]?.id;
-      try {
-        const url = `https://api.quran.com/api/v4/recitations/${recId}/by_ayah/${surah}:${ayah}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`audio API ${res.status}`);
-        const data = await res.json();
-        const file = data.audio_files?.[0];
-        if (!file?.url) throw new Error('no audio file');
-        return /^https?:\/\//.test(file.url)
-          ? file.url
-          : 'https://verses.quran.com/' + file.url;
-      } catch {
-        return audioUrlGuess(surah, ayah, slug);   // best-effort fallback
-      }
     }
 
     /* ────────────────────────────────────────────────────────────
@@ -757,12 +776,9 @@
       setPlayingState(false);
       setStatus('Loading…', 'loading');
 
-      let verseData, aUrl;
+      let verseData;
       try {
-        [verseData, aUrl] = await Promise.all([
-          fetchVerseData(surah, ayah),
-          fetchAudioUrl(surah, ayah, currentSlug),
-        ]);
+        verseData = await fetchVerseData(surah, ayah);
       } catch (err) {
         if (myToken !== loadToken) return;
         setStatus('Could not fetch verse data. Check your connection and try again.', 'error');
@@ -770,8 +786,11 @@
       }
       if (myToken !== loadToken) return;   // a newer load superseded this one
 
-      audio.src = aUrl;
-      audio.load();
+      // Set up the audio candidate chain and start the first one.
+      audioCands = buildCandidates(surah, ayah, currentSlug);
+      candIndex  = 0;
+      intendPlay = autoplay;
+      playCandidate();
 
       // Card
       const name  = SURAH_NAMES[surah] || `Surah ${surah}`;
@@ -788,11 +807,6 @@
 
       nowPlaying.classList.add('visible');
       clearStatus();
-
-      if (autoplay) {
-        try { await audio.play(); setPlayingState(true); }
-        catch { /* autoplay blocked — user can press Play */ }
-      }
     }
 
     /* ────────────────────────────────────────────────────────────
@@ -816,8 +830,14 @@
     ──────────────────────────────────────────────────────────── */
     audio.addEventListener('error', () => {
       if (!audio.src) return;   // ignore the reset that clears src
+      // Failover: try the next candidate source before giving up.
+      if (candIndex < audioCands.length - 1) {
+        candIndex++;
+        playCandidate();
+        return;
+      }
       setStatus(
-        'Could not load audio for this verse. Trying a different reciter may help.',
+        'Could not load audio for this verse from any source. Trying a different reciter may help.',
         'error'
       );
       setPlayingState(false);
